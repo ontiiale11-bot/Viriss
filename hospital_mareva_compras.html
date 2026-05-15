@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hospital Mareva — Compras & Almacén</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Nunito:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f7fafd;
+    --border: #dde4ed;
+    --text: #141d2b;
+    --text2: #6b7a8d;
+    --navy: #2c3e6b;
+    --navy-dark: #1a2545;
+    --navy-light: #eef1f9;
+    --blue: #3a7bcb;
+    --blue-light: #eaf2fb;
+    --red: #c0424a;
+    --red-light: #fdf0f1;
+    --yellow: #c49a1a;
+    --yellow-light: #fdf8ee;
+    --green: #2d8a5e;
+    --green-light: #edf7f2;
+    --orange: #d4702a;
+    --orange-light: #fdf3ec;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    height: 64px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hdr-logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-waves {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .logo-waves span {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: white;
+    opacity: 0.85;
+  }
+  .logo-waves span:nth-child(1) { width: 28px; }
+  .logo-waves span:nth-child(2) { width: 22px; margin-left: 3px; }
+  .logo-waves span:nth-child(3) { width: 28px; }
+
+  .hdr-title h1 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; letter-spacing: 0.2px; }
+  .hdr-title p { font-size: 10px; opacity: 0.5; font-weight: 300; letter-spacing: 1.4px; text-transform: uppercase; margin-top: 1px; }
+
+  #syncStatus {
+    font-size: 11px; padding: 4px 11px; border-radius: 20px; font-weight: 700;
+    letter-spacing: 0.3px; transition: all 0.3s;
+  }
+  #syncStatus.synced { background: rgba(45,138,94,0.35); color: #7ed4ae; }
+  #syncStatus.saving { background: rgba(196,154,26,0.35); color: #e8c97a; }
+  #syncStatus.error  { background: rgba(192,66,74,0.35); color: #f5a8ae; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 14px 20px; border: none; background: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+    color: var(--text2); border-bottom: 2px solid transparent;
+    margin-bottom: -2px; white-space: nowrap; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+  .tab-btn:hover { color: var(--text); }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    background: var(--navy-dark);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat-label { font-size: 9px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+  .stat-val { font-size: 20px; font-weight: 800; font-family: 'Playfair Display', serif; }
+  .stat-val.red { color: #f28b90; }
+  .stat-val.yellow { color: #e8c97a; }
+  .stat-val.green { color: #7ed4ae; }
+  .stat-val.blue { color: #8bbee8; }
+
+  /* ─── MAIN ─── */
+  .main { padding: 20px; max-width: 1280px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    margin-bottom: 18px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .card-header h2 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 18px 20px; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    padding: 9px 16px; border: none; border-radius: 9px;
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-navy { background: var(--navy); color: white; }
+  .btn-navy:hover { background: var(--navy-dark); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #206644; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-red:hover { background: #a33039; }
+  .btn-yellow { background: var(--yellow); color: white; }
+  .btn-yellow:hover { background: #a07d14; }
+  .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg); color: var(--text); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn-xs { padding: 3px 8px; font-size: 11px; }
+
+  /* ─── FORM ─── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group.half { grid-column: span 2; }
+  label { font-size: 10px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; }
+
+  input, select, textarea {
+    padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: 9px; font-family: 'Nunito', sans-serif; font-size: 13px;
+    color: var(--text); background: white; transition: border 0.2s, box-shadow 0.2s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--navy);
+    box-shadow: 0 0 0 3px rgba(44,62,107,0.1);
+  }
+
+  /* ─── BADGES ─── */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.2px; }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-navy { background: var(--navy-light); color: var(--navy); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+
+  /* ─── STATUS DOT ─── */
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-red { background: var(--red); box-shadow: 0 0 0 3px rgba(192,66,74,0.2); }
+  .dot-yellow { background: var(--yellow); box-shadow: 0 0 0 3px rgba(196,154,26,0.2); }
+  .dot-green { background: var(--green); box-shadow: 0 0 0 3px rgba(45,138,94,0.2); }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: var(--radius); width: 100%; max-width: 700px;
+    max-height: 93vh; overflow-y: auto; box-shadow: 0 24px 70px rgba(0,0,0,0.3);
+  }
+  .modal-header {
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; background: white; z-index: 1;
+  }
+  .modal-header h3 { font-family: 'Playfair Display', serif; font-size: 19px; }
+  .modal-body { padding: 20px 22px; }
+  .modal-footer {
+    padding: 14px 22px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; justify-content: flex-end;
+    position: sticky; bottom: 0; background: white;
+  }
+  .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text2); line-height: 1; }
+
+  .section-divider {
+    font-size: 10px; font-weight: 800; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 1.2px; margin: 18px 0 10px; padding-bottom: 6px;
+    border-bottom: 1.5px solid var(--border); display: flex; align-items: center; gap: 7px;
+  }
+
+  /* ─── FILTER ROW ─── */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .filter-row input, .filter-row select { max-width: 220px; flex: 1; }
+
+  /* ─── ORDENES GRID ─── */
+  .ordenes-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .orden-column {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .orden-column-header {
+    padding: 12px 16px;
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid transparent;
+  }
+
+  .col-pendiente .orden-column-header { background: var(--red-light); color: var(--red); border-bottom-color: var(--red); }
+  .col-proceso .orden-column-header { background: var(--yellow-light); color: var(--yellow); border-bottom-color: var(--yellow); }
+  .col-recibido .orden-column-header { background: var(--green-light); color: var(--green); border-bottom-color: var(--green); }
+
+  .orden-column-body {
+    padding: 10px;
+    min-height: 200px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  /* ─── ORDEN CARD ─── */
+  .orden-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: grab;
+    transition: all 0.2s;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    user-select: none;
+    position: relative;
+  }
+  .orden-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-1px); }
+  .orden-card.dragging { opacity: 0.4; cursor: grabbing; }
+  .orden-card.drag-over { border: 2px dashed var(--navy); background: var(--navy-light); }
+
+  .orden-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .orden-card-num { font-size: 10px; color: var(--text2); font-weight: 700; letter-spacing: 0.5px; }
+  .orden-card-fecha { font-size: 10px; color: var(--text2); }
+  .orden-card-title { font-weight: 700; font-size: 13px; line-height: 1.3; margin-bottom: 5px; }
+  .orden-card-dept { font-size: 11px; color: var(--blue); font-weight: 700; }
+  .orden-card-items { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .orden-card-actions { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; }
+
+  .orden-card.status-pendiente { border-left: 4px solid var(--red); }
+  .orden-card.status-proceso { border-left: 4px solid var(--yellow); }
+  .orden-card.status-recibido { border-left: 4px solid var(--green); }
+
+  .drop-zone {
+    min-height: 60px;
+    border-radius: 8px;
+    border: 2px dashed transparent;
+    transition: all 0.2s;
+    padding: 4px;
+  }
+  .drop-zone.drag-active { border-color: var(--navy); background: var(--navy-light); }
+
+  /* ─── INVENTARIO TABLE ─── */
+  .inv-table-wrap { overflow-x: auto; }
+  .inv-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .inv-table th {
+    text-align: left; padding: 10px 14px;
+    font-size: 10px; font-weight: 800; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    background: var(--surface2); border-bottom: 2px solid var(--border);
+    white-space: nowrap; position: sticky; top: 0;
+  }
+  .inv-table td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .inv-table tr:last-child td { border-bottom: none; }
+  .inv-table tr:hover td { background: #fafcff; }
+
+  .inv-table .qty-input {
+    width: 72px; padding: 5px 8px; border-radius: 7px; font-size: 13px; text-align: center;
+  }
+
+  .reorder-bar {
+    height: 6px; border-radius: 3px; background: var(--border);
+    overflow: hidden; margin-top: 3px; min-width: 60px;
+  }
+  .reorder-bar-fill {
+    height: 100%; border-radius: 3px; transition: width 0.3s;
+  }
+
+  .inv-alerta { color: var(--red); font-weight: 800; }
+
+  /* ─── SEMANA VIEW ─── */
+  .semana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .semana-art {
+    background: white; border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .semana-art:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+  .semana-art.seleccionado { border-color: var(--navy); background: var(--navy-light); }
+  .semana-art-check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; transition: all 0.2s; }
+  .semana-art.seleccionado .semana-art-check { background: var(--navy); border-color: var(--navy); color: white; }
+  .semana-art-name { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.3; }
+  .semana-art-dept { font-size: 11px; color: var(--blue); font-weight: 700; }
+
+  /* ─── LOADING ─── */
+  #loadingOverlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; flex-direction: column; gap: 16px;
+  }
+  #loadingOverlay.hidden { display: none; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--text2); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+
+  /* ─── DETAIL VIEW ─── */
+  .orden-detail { display: none; }
+  .orden-detail.open { display: block; }
+
+  .items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .items-table th {
+    text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 800;
+    color: var(--text2); text-transform: uppercase; letter-spacing: 0.7px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .items-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  .items-table tr:last-child td { border-bottom: none; }
+
+  .alert-banner {
+    background: linear-gradient(135deg, #fff3cd, #fff8e1);
+    border: 1px solid #f0c040;
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600; color: #856404;
+    margin-bottom: 14px;
+  }
+
+  /* ─── DEPT TAGS ─── */
+  .dept-tag {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 800; background: var(--navy-light); color: var(--navy);
+  }
+
+  /* ─── COL COUNT BADGE ─── */
+  .col-count {
+    background: rgba(0,0,0,0.15); color: inherit; border-radius: 20px;
+    padding: 1px 8px; font-size: 11px; font-weight: 800;
+  }
+
+  /* ─── DRAG HANDLES ─── */
+  .drag-handle { font-size: 16px; color: var(--border); cursor: grab; margin-right: 4px; }
+
+  @media (max-width: 900px) {
+    .ordenes-columns { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    header { height: auto; padding: 12px 16px; }
+    .main { padding: 12px; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── REORDER ALERT ─── */
+  .reorder-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 800;
+  }
+  .reorder-ok { background: var(--green-light); color: var(--green); }
+  .reorder-warn { background: var(--yellow-light); color: var(--yellow); }
+  .reorder-critical { background: var(--red-light); color: var(--red); }
+
+  /* ─── TABS MINI ─── */
+  .mini-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .mini-tab {
+    padding: 7px 14px; border-radius: 8px; border: 1.5px solid var(--border);
+    background: white; font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+    color: var(--text2); cursor: pointer; transition: all 0.2s;
+  }
+  .mini-tab.active { background: var(--navy); color: white; border-color: var(--navy); }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingOverlay">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="logo-waves" style="scale:1.5">
+      <span></span><span></span><span></span>
+    </div>
+    <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--navy)">Hospital Mareva</div>
+  </div>
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text2)">Cargando datos…</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="hdr-logo">
+    <div class="logo-waves"><span></span><span></span><span></span></div>
+    <div class="hdr-title">
+      <h1>Hospital Mareva</h1>
+      <p>Compras · Almacén · Inventario</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span id="syncStatus" class="synced">✓ Sincronizado</span>
+    <button class="btn btn-navy btn-sm" onclick="abrirModalOrden()">+ Nueva Orden</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" id="tab-ordenes" onclick="showTab('ordenes',this)">📋 Órdenes de Compra</button>
+  <button class="tab-btn" id="tab-semana" onclick="showTab('semana',this)">📅 Compra Semanal</button>
+  <button class="tab-btn" id="tab-inventario" onclick="showTab('inventario',this)">🏪 Inventario Almacén</button>
+  <button class="tab-btn" id="tab-alertas" onclick="showTab('alertas',this)">⚠️ Puntos de Reorden</button>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat"><span class="stat-label">Órdenes pendientes</span><span class="stat-val red" id="statPendiente">—</span></div>
+  <div class="stat"><span class="stat-label">En proceso</span><span class="stat-val yellow" id="statProceso">—</span></div>
+  <div class="stat"><span class="stat-label">Recibidas hoy</span><span class="stat-val green" id="statRecibido">—</span></div>
+  <div class="stat"><span class="stat-label">Artículos bajo mínimo</span><span class="stat-val red" id="statBajoMinimo">—</span></div>
+  <div class="stat"><span class="stat-label">Total artículos</span><span class="stat-val blue" id="statTotalArt">—</span></div>
+</div>
+
+<div class="main">
+
+  <!-- ── ÓRDENES DE COMPRA ── -->
+  <div class="section active" id="sec-ordenes">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:2px">Órdenes de Compra</h2>
+        <p style="font-size:12px;color:var(--text2)">Arrastra las tarjetas entre columnas para cambiar su estado</p>
+      </div>
+      <div class="filter-row" style="margin:0">
+        <input type="text" id="filtroOrden" placeholder="Buscar orden…" oninput="renderOrdenes()" style="max-width:180px">
+        <select id="filtroDeptOrden" onchange="renderOrdenes()" style="max-width:180px">
+          <option value="">Todos los departamentos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ordenes-columns">
+      <!-- PENDIENTE -->
+      <div class="orden-column col-pendiente">
+        <div class="orden-column-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="dot dot-red"></span> Pendiente
+          </div>
+          <span class="col-count" id="cnt-pendiente">0</span>
+        </div>
+        <div class="orden-column-body drop-zone" id="col-pendiente" data-status="pendiente"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'pendiente')">
+        </div>
+      </div>
+
+      <!-- EN PROCESO -->
+      <div class="orden-column col-proceso">
+        <div class="orden-column-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="dot dot-yellow"></span> En Proceso
+          </div>
+          <span class="col-count" id="cnt-proceso">0</span>
+        </div>
+        <div class="orden-column-body drop-zone" id="col-proceso" data-status="proceso"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'proceso')">
+        </div>
+      </div>
+
+      <!-- RECIBIDO -->
+      <div class="orden-column col-recibido">
+        <div class="orden-column-header">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="dot dot-green"></span> Recibido en Almacén
+          </div>
+          <span class="col-count" id="cnt-recibido">0</span>
+        </div>
+        <div class="orden-column-body drop-zone" id="col-recibido" data-status="recibido"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'recibido')">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COMPRA SEMANAL ── -->
+  <div class="section" id="sec-semana">
+    <div class="card">
+      <div class="card-header">
+        <h2>📅 Compra de la Semana</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="week" id="semanaFecha" style="max-width:180px" onchange="renderSemana()">
+          <button class="btn btn-navy btn-sm" onclick="generarOrdenSemana()">✅ Generar Orden de Compra</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Selecciona los artículos que necesitas comprar esta semana. Puedes filtrar por departamento.</p>
+        <div class="filter-row">
+          <input type="text" id="filtroSemanaArt" placeholder="Buscar artículo…" oninput="renderSemanaArt()">
+          <select id="filtroPSemana" onchange="renderSemanaArt()">
+            <option value="">Todos los departamentos</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="selectAllSemana()">Seleccionar todos</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearSemana()">Limpiar</button>
+          <span id="semanaCount" style="font-size:13px;color:var(--navy);font-weight:700;align-self:center">0 artículos seleccionados</span>
+        </div>
+        <div class="semana-grid" id="semanaGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INVENTARIO ── -->
+  <div class="section" id="sec-inventario">
+    <div class="card">
+      <div class="card-header">
+        <h2>🏪 Inventario de Almacén</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-navy btn-sm" onclick="abrirModalArt()">+ Agregar Artículo</button>
+          <button class="btn btn-green btn-sm" onclick="exportarInventario()">↓ Exportar</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="filter-row">
+          <input type="text" id="filtroInv" placeholder="Buscar artículo…" oninput="renderInventario()">
+          <select id="filtroDeptInv" onchange="renderInventario()">
+            <option value="">Todos los departamentos</option>
+          </select>
+          <select id="filtroEstadoInv" onchange="renderInventario()">
+            <option value="">Todos los estados</option>
+            <option value="ok">Stock OK</option>
+            <option value="warn">Por agotarse</option>
+            <option value="critical">Bajo mínimo</option>
+          </select>
+        </div>
+        <div class="inv-table-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Departamento</th>
+                <th style="text-align:center">Stock Actual</th>
+                <th style="text-align:center">Mínimo</th>
+                <th style="text-align:center">Reorden</th>
+                <th style="text-align:center">Máximo</th>
+                <th>Nivel</th>
+                <th>Estado</th>
+                <th style="text-align:center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALERTAS / PUNTOS DE REORDEN ── -->
+  <div class="section" id="sec-alertas">
+    <div class="card">
+      <div class="card-header">
+        <h2>⚠️ Puntos de Reorden y Alertas</h2>
+        <button class="btn btn-navy btn-sm" onclick="generarOrdenDesdeAlertas()">📋 Generar Orden de los críticos</button>
+      </div>
+      <div class="card-body">
+        <div id="alertasBannerWrap"></div>
+        <div class="mini-tabs">
+          <button class="mini-tab active" onclick="filtroAlerta='critical';renderAlertas();this.parentElement.querySelectorAll('.mini-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🔴 Bajo mínimo</button>
+          <button class="mini-tab" onclick="filtroAlerta='warn';renderAlertas();this.parentElement.querySelectorAll('.mini-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🟡 En punto de reorden</button>
+          <button class="mini-tab" onclick="filtroAlerta='all';renderAlertas();this.parentElement.querySelectorAll('.mini-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active')">📋 Todos</button>
+        </div>
+        <div class="inv-table-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th>Departamento</th>
+                <th style="text-align:center">Stock</th>
+                <th style="text-align:center">Mínimo</th>
+                <th style="text-align:center">Reorden</th>
+                <th style="text-align:center">Máximo</th>
+                <th>Estado</th>
+                <th style="text-align:center">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="alertasBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ─── MODAL ORDEN ─── -->
+<div class="modal-overlay" id="modalOrden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalOrdenTitle">Nueva Orden de Compra</h3>
+      <button class="close-btn" onclick="cerrarModal('modalOrden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-divider">📋 Datos de la Orden</div>
+      <div class="form-grid">
+        <div class="form-group half">
+          <label>Descripción / Proveedor</label>
+          <input type="text" id="oDesc" placeholder="Ej: Farmacia ABC — Semana 20">
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <select id="oDept">
+            <option value="">Seleccionar…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha de orden</label>
+          <input type="date" id="oFecha">
+        </div>
+        <div class="form-group">
+          <label>Fecha estimada entrega</label>
+          <input type="date" id="oFechaEst">
+        </div>
+        <div class="form-group full">
+          <label>Notas</label>
+          <textarea id="oNotas" rows="2" placeholder="Observaciones, instrucciones de entrega…"></textarea>
+        </div>
+      </div>
+
+      <div class="section-divider">📦 Artículos de la Orden</div>
+      <div id="ordenItemsList"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="agregarItemOrden()">+ Agregar artículo</button>
+
+      <div class="section-divider">🔄 Estado</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="statusBtnPendiente" onclick="setOrdenStatus('pendiente')"
+          style="flex:1;justify-content:center;border:2px solid var(--red);color:var(--red);background:var(--red-light)">🔴 Pendiente</button>
+        <button class="btn" id="statusBtnProceso" onclick="setOrdenStatus('proceso')"
+          style="flex:1;justify-content:center;border:2px solid var(--yellow);color:var(--yellow);background:var(--yellow-light)">🟡 En Proceso</button>
+        <button class="btn" id="statusBtnRecibido" onclick="setOrdenStatus('recibido')"
+          style="flex:1;justify-content:center;border:2px solid var(--green);color:var(--green);background:var(--green-light)">🟢 Recibido</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalOrden')">Cancelar</button>
+      <button class="btn btn-navy" onclick="guardarOrden()">Guardar Orden</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL ARTÍCULO ─── -->
+<div class="modal-overlay" id="modalArt">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalArtTitle">Nuevo Artículo</h3>
+      <button class="close-btn" onclick="cerrarModal('modalArt')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nombre del artículo</label>
+          <input type="text" id="aName" placeholder="Nombre completo del artículo">
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <select id="aDept">
+            <option value="">Seleccionar…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Unidad de medida</label>
+          <input type="text" id="aUnidad" placeholder="Piezas, Cajas, ml…">
+        </div>
+        <div class="form-group">
+          <label>Stock actual</label>
+          <input type="number" id="aStock" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Stock mínimo</label>
+          <input type="number" id="aMin" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Punto de reorden</label>
+          <input type="number" id="aReorden" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Stock máximo</label>
+          <input type="number" id="aMax" placeholder="0" min="0">
+        </div>
+        <div class="form-group full">
+          <label>Notas / Especificaciones</label>
+          <textarea id="aNotas" rows="2" placeholder="Marca, presentación, especificaciones…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalArt')">Cancelar</button>
+      <button class="btn btn-navy" onclick="guardarArticulo()">Guardar Artículo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MODAL DETALLE ORDEN ─── -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal" style="max-width:780px">
+    <div class="modal-header">
+      <h3 id="detalleTitle">Detalle de Orden</h3>
+      <button class="close-btn" onclick="cerrarModal('modalDetalle')">×</button>
+    </div>
+    <div class="modal-body" id="detalleBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalDetalle')">Cerrar</button>
+      <button class="btn btn-green" id="detalleMarcarBtn" onclick="marcarRecibidoDesdeDetalle()">✅ Marcar como Recibido</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────
+let ordenes = [];
+let inventario = [];
+let editOrdenIdx = null;
+let editArtIdx = null;
+let ordenStatus = 'pendiente';
+let ordenItems = [];
+let dragOrdenId = null;
+let filtroAlerta = 'critical';
+let semanaSel = new Set();
+let detalleOrdenId = null;
+let saveTimeout = null;
+
+// ─── DEPARTAMENTOS ───────────────────────────────────────────────
+const DEPARTAMENTOS = [
+  'Quirófano', 'Anestesiología', 'Farmacia', 'Enfermería',
+  'Laboratorio', 'Urgencias', 'Hospitalización', 'Administración', 'General'
+];
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function fmtFecha(f) {
+  if (!f) return '—';
+  const [y,m,d] = f.split('-');
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d} ${meses[parseInt(m)-1]} ${y}`;
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ─── SYNC STATUS ─────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const el = document.getElementById('syncStatus');
+  el.className = state;
+  el.textContent = msg;
+}
+
+// ─── CLOUD STORAGE ───────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await window.storage.get('mareva-compras-v2', true);
+    if (r && r.value) {
+      const d = JSON.parse(r.value);
+      ordenes = d.ordenes || [];
+      inventario = d.inventario || [];
+    }
+  } catch(e) {
+    ordenes = [];
+    inventario = inventario.length ? inventario : getDefaultInventario();
+  }
+  if (!inventario.length) inventario = getDefaultInventario();
+}
+
+async function saveNow() {
+  setSyncStatus('saving', '⏳ Guardando…');
+  try {
+    await window.storage.set('mareva-compras-v2', JSON.stringify({ ordenes, inventario }), true);
+    setSyncStatus('synced', '✓ Sincronizado');
+  } catch(e) {
+    setSyncStatus('error', '✗ Error al guardar');
+  }
+}
+
+function save() {
+  setSyncStatus('saving', '⏳ Guardando…');
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveNow, 600);
+}
+
+// ─── INVENTARIO POR DEFECTO ──────────────────────────────────────
+function getDefaultInventario() {
+  const arts = [
+    // Farmacia / Medicamentos
+    {name:'ACEITE DE ALMENDRAS- 1L', dept:'Farmacia'},
+    {name:'ADRENALINA (EPINEFRINA) 1MG/ML INY CAJA 50 AMP', dept:'Anestesiología'},
+    {name:'Agua Esteril 3ML para uso Inyectable Pisa C/100AMP', dept:'Farmacia'},
+    {name:'AGUA OXIGENADA 480 ML – PROTEC', dept:'Enfermería'},
+    {name:'AGUJA HIPODERMICA 18 X 32 C/100 (ROSA)', dept:'Farmacia'},
+    {name:'AGUJA HIPODERMICA 20X32 C/100 (AMARILLO)', dept:'Farmacia'},
+    {name:'AGUJA HIPODERMICA 22X32 C/100 (NEGRO)', dept:'Farmacia'},
+    {name:'AGUJA HIPODERMICA 25 X16 C/100 NARANJA', dept:'Farmacia'},
+    {name:'AGUJA INYECTABLE 10 ML C/100', dept:'Farmacia'},
+    {name:'ALCOHOL CAÑITAS AZUL 70° 920 ML', dept:'Enfermería'},
+    {name:'AMIKACINA 500 MG 2 ML SOL. INYECTABLE', dept:'Farmacia'},
+    {name:'Aminofilina C/50AMP Solucion 250mg/mL', dept:'Farmacia'},
+    {name:'APLICADOR ESTERIL PROTEC 3X100 C/100', dept:'Enfermería'},
+    {name:'BATA MÉDICO-PACIENTE AZUL C/10', dept:'Hospitalización'},
+    {name:'BOLSA AMARILLA 50×60 C/50', dept:'General'},
+    {name:'BOLSA DE ORINA ESTERIL DESECHABLE 2000ML', dept:'Hospitalización'},
+    {name:'BOLSA ROJA 50×60 C/50', dept:'General'},
+    {name:'BROMURO DE VECURONIO 4MG/1ML (50 PZS)', dept:'Anestesiología'},
+    {name:'Bupivacaina Solucion 50mg/10mL 1 AMP', dept:'Anestesiología'},
+    {name:'CAL SODADA', dept:'Anestesiología'},
+    {name:'CANULA DE GUEDEL 4 90mm AMARILLO', dept:'Anestesiología'},
+    {name:'CANULA DE GUEDEL 5 100mm ROJO', dept:'Anestesiología'},
+    {name:'CANULA NASAL PARA OXIGENO ADULTO', dept:'Hospitalización'},
+    {name:'CANULA YANKAWER SIN EXTENSION', dept:'Quirófano'},
+    {name:'CANULA YANKAWER CON EXTENSION', dept:'Quirófano'},
+    {name:'Cateter introcan #14 braun', dept:'Enfermería'},
+    {name:'Cateter introcan #18 braun', dept:'Enfermería'},
+    {name:'Cateter introcan #20 braun', dept:'Enfermería'},
+    {name:'Cateter introcan #22 braun', dept:'Enfermería'},
+    {name:'CEFALOTINA SODICA SOL INY 1G', dept:'Farmacia'},
+    {name:'CEFOTAXIMA IV SOL INY 1G', dept:'Farmacia'},
+    {name:'CEFTRIAXONA SOL.IV 1G ZEUXONA', dept:'Farmacia'},
+    {name:'CETRIAXONA AUROVIAX 1G INY', dept:'Farmacia'},
+    {name:'CEFUROXIMA IV 750 MG', dept:'Farmacia'},
+    {name:'CEPILLO E-Z SCRUB C/JABON BD', dept:'Quirófano'},
+    {name:'CINTA TESTIGO P/ESTERILIZACION A VAPOR', dept:'Quirófano'},
+    {name:'CIPROFLOXACINO IV 200MG/100ML', dept:'Farmacia'},
+    {name:'CIRCUITO DE VENTILACIÓN ANESTECIA ADULTO', dept:'Anestesiología'},
+    {name:'CLINDAMICINA AMP 2ML SOL. INY 300MG', dept:'Farmacia'},
+    {name:'COMODO PLASTICO', dept:'Hospitalización'},
+    {name:'COMPRESA P/VIENTRE 70X45 CM PISA', dept:'Quirófano'},
+    {name:'CUBRE BOCA AZUL C/50', dept:'General'},
+    {name:'CUBRE CAMA 60×90 CM C/10', dept:'Hospitalización'},
+    {name:'CUBRE ZAPATOS SENCILLO AZUL PAQ 100 PZA', dept:'Quirófano'},
+    {name:'Dermodine espuma 3.5lt', dept:'Quirófano'},
+    {name:'DEXAMETASONA SOL. INY 8MG/2ML', dept:'Farmacia'},
+    {name:'DICLOFENACO IM/IV 3ML 75MG', dept:'Farmacia'},
+    {name:'DIPIRONA IV Sol. Inyectable 1g/2ml (Metamizol)', dept:'Farmacia'},
+    {name:'DRENOVAC 1/4" EQUIPO PARA DRENAJE', dept:'Quirófano'},
+    {name:'DRENOVAC 1/8" EQUIPO PARA DRENAJE', dept:'Quirófano'},
+    {name:'EFEDRINA 50MG/ML EPHEDRINE SULFATE 10 FCO', dept:'Anestesiología'},
+    {name:'ELECTRODO ADULTO C/100 KENDALL', dept:'Hospitalización'},
+    {name:'ESTILETE P/INTUBACION 14FR ADULTO', dept:'Anestesiología'},
+    {name:'FENILEFRINA 10MG/ML 25 PZS', dept:'Anestesiología'},
+    {name:'FORMALDEHÍDO AL 37% 3.5 LT', dept:'Laboratorio'},
+    {name:'PROPOFOL (FRESOFOL) 1% SOL. INY C/5 AMP', dept:'Anestesiología'},
+    {name:'FUROSEMIDA 2ML SOL INY 20MG C/5', dept:'Farmacia'},
+    {name:'GASA SIN TRAMA C/200 PZS 10X10', dept:'Enfermería'},
+    {name:'GEL P/ECOGRAFIA CONPRUGEL 4 LT', dept:'Laboratorio'},
+    {name:'GELAFUNDIN 4 SOL INY FLEX 500ML', dept:'Farmacia'},
+    {name:'GENTAMICINA SOL INY 160MG C/5', dept:'Farmacia'},
+    {name:'GORRO PARA CIRUJANO AZUL C/100 PZS', dept:'Quirófano'},
+    {name:'GUANTE N/E PLUS BLANCO MEDIANO C/100', dept:'Quirófano'},
+    {name:'Guante p/cirujano #6.5 c/100', dept:'Quirófano'},
+    {name:'Guante p/cirujano #7 c/100', dept:'Quirófano'},
+    {name:'Guante p/cirujano #7.5 c/100', dept:'Quirófano'},
+    {name:'Guante p/cirujano #8 c/100', dept:'Quirófano'},
+    {name:'GUANTES DE EXPLORACION C/100 PZS', dept:'Enfermería'},
+    {name:'GUANTES ESTERILES Chicos C/100', dept:'Quirófano'},
+    {name:'GUANTES NITRILO C/100 PZS', dept:'Enfermería'},
+    {name:'GUANTES NO ESTERILES Chicos c/100', dept:'Enfermería'},
+    {name:'Hidrocortisona C/50 Frascos 100mg', dept:'Farmacia'},
+    {name:'Hoja p/bisturi acero #15 c/100', dept:'Quirófano'},
+    {name:'Hoja p/bisturi acero #21 c/100', dept:'Quirófano'},
+    {name:'Dopamina (Inotropisa) 200mg/5mL Iny', dept:'Farmacia'},
+    {name:'INSPIROMETRO EJERCITADOR PULMONAR', dept:'Hospitalización'},
+    {name:'ISODINE DERMODIN 3.5 GALON', dept:'Quirófano'},
+    {name:'ISOPO ESTERIL C/100', dept:'Enfermería'},
+    {name:'Jeringa 10ml 22g c/100', dept:'Farmacia'},
+    {name:'JERINGA 20ML SIN AGUJA C/50', dept:'Farmacia'},
+    {name:'JERINGA 3ML 22G×32MM C/100', dept:'Farmacia'},
+    {name:'JERINGA 5ML 22G×32MM C/100', dept:'Farmacia'},
+    {name:'JERINGA MONOJECT 60ML TOOMEY 20 PZS', dept:'Farmacia'},
+    {name:'KETEROLACO SOL. INY. 30MG/ML C/3 AMP', dept:'Farmacia'},
+    {name:'Krit 500ml', dept:'Quirófano'},
+    {name:'LAPIZ DE CAUTERIO ELECTROQUIRURGICO', dept:'Quirófano'},
+    {name:'Naloxona (LEFEBRE) 0.40mg/mL Inyectable', dept:'Farmacia'},
+    {name:'LEVOFLOXACINO 100ML SOL INY 500MG', dept:'Farmacia'},
+    {name:'LIDOCAINA CON EPINEFRINA 20MG INY', dept:'Anestesiología'},
+    {name:'LLAVE DE TRES VIAS C/EXTENSION 80CM', dept:'Enfermería'},
+    {name:'LLAVE DE TRES VIAS SIN EXTENSION BRAUN', dept:'Enfermería'},
+    {name:'MASCARILLA DE OXIGENO CON BOLSA NO REFLUJO', dept:'Anestesiología'},
+    {name:'MASCARILLA DE OXIGENO ADULTO ALARGADA', dept:'Hospitalización'},
+    {name:'MASCARILLA LARINGE RESPIFIX DESECHABLE', dept:'Anestesiología'},
+    {name:'METAMIZOL SODICO SOL. INY. 1G/2ML C/3 AMP', dept:'Farmacia'},
+    {name:'METILPREDNISOLONA 2ML SOL INY 40MG', dept:'Farmacia'},
+    {name:'METOCLOPRAMIDA 2ML SOL INY 10MG', dept:'Farmacia'},
+    {name:'MIDAZOLAM SOL. INY. 5MG/5ML C/5 AMP', dept:'Anestesiología'},
+    {name:'MICRODACYN 5 LITROS', dept:'Quirófano'},
+    {name:'MICROPORE 1" 2.5CM C/12', dept:'Enfermería'},
+    {name:'MICROPORE 1" 2.5CM C/12 (ESTERIL)', dept:'Quirófano'},
+    {name:'MICROPORE 1/2" 1.5CM C/24', dept:'Enfermería'},
+    {name:'MONOCRYL 2/0 A/C INCOLORO 24MM C/12', dept:'Quirófano'},
+    {name:'MONOCRYL 3-0 A/C INCOLORO 24MM C/12', dept:'Quirófano'},
+    {name:'MONOCRYL 4-0 A/C INCOLORO 19MM C/12', dept:'Quirófano'},
+    {name:'MONOCRYL 5-0 A/C INCOLORO 16MM C/12', dept:'Quirófano'},
+    {name:'MONOCRYL 2-0 A/C INCOLORO 36MM C/12', dept:'Quirófano'},
+    {name:'NITROBID', dept:'Farmacia'},
+    {name:'NOREPINEFRINA INY 4MG/4ML C/10 AMP', dept:'Farmacia'},
+    {name:'NORMOGOTERO S/AGUJA SENSIMEDICAL', dept:'Enfermería'},
+    {name:'OMEPRAZOL 40MG/10ML INY', dept:'Farmacia'},
+    {name:'ONDANSETRON IV/IM 8MG C/3 AMP', dept:'Farmacia'},
+    {name:'FENTANILO (OPERATIVAN) 0.5MG/10ML C/6 AMP', dept:'Anestesiología'},
+    {name:'ORINAL PLASTICO C/TAPA ADULTO', dept:'Hospitalización'},
+    {name:'PAÑAL P/ADULTO DIGNITY GRANDE C/10', dept:'Hospitalización'},
+    {name:'PARACETAMOL 1G/100ML SOL. INY.', dept:'Farmacia'},
+    {name:'Pentalmidón 500mg', dept:'Farmacia'},
+    {name:'PERIFIX 421 18G×3 1/4 BRAUN C/JERINGA', dept:'Anestesiología'},
+    {name:'PISACAINA SIMPLE 2% 50ML (LIDOCAINA PISA)', dept:'Anestesiología'},
+    {name:'Piscaina Simple 2% 50Ml LIDOCAINA', dept:'Anestesiología'},
+    {name:'ADENOSINA (PISDENO) 6mg/2mL Iny', dept:'Farmacia'},
+    {name:'PLACA DE RETORNO ELECTROSURGICAL', dept:'Quirófano'},
+    {name:'PROPOFOL 200MG/20ML PRIGADEF C/5 FCO', dept:'Anestesiología'},
+    {name:'RECOLECTOR DESECHABLE P/PUNZOCAT ROJO 4LT', dept:'General'},
+    {name:'SABANA MEDIANA 1.2X2.10M AZUL PAQ 10 PZS', dept:'Hospitalización'},
+    {name:'SABANA PLANA 2MX1M AZUL C/10', dept:'Hospitalización'},
+    {name:'SALBUTAMOL AEROSOL 100MCG', dept:'Farmacia'},
+    {name:'SEVOFLURANO SOVENER FCO 250ML', dept:'Anestesiología'},
+    {name:'SOBRE DE GASAS ESTERIL 10X10 C/100', dept:'Quirófano'},
+    {name:'Solucion Glucosa 5% DX5 Inyectable', dept:'Farmacia'},
+    {name:'Sonda Foley 16FR SENSIMEDICAL', dept:'Hospitalización'},
+    {name:'SONDA SILICEO ASPIRACION TRAQUEA', dept:'Anestesiología'},
+    {name:'Suero Cloruro de sodio 100ml plástico', dept:'Farmacia'},
+    {name:'Suero Cloruro de sodio 250ml plástico', dept:'Farmacia'},
+    {name:'Suero Cloruro de sodio 500ml plástico', dept:'Farmacia'},
+    {name:'Suero Cloruro de sodio 1000ml plástico', dept:'Farmacia'},
+    {name:'Suero Hartmann 500ml plástico', dept:'Farmacia'},
+    {name:'Suero Hartmann 1000ml plástico', dept:'Farmacia'},
+    {name:'SUTURA ÁCIDO POLIGLICÓLICO 1 C/AG 37MM C/12', dept:'Quirófano'},
+    {name:'SUTURA NAYLON 2-0 C/AG 24MM C/12', dept:'Quirófano'},
+    {name:'SUTURA NAYLON 3-0 C/AG 19MM C/12', dept:'Quirófano'},
+    {name:'SUTURA NAYLON 4-0 C/AG 19MM C/12', dept:'Quirófano'},
+    {name:'SUTURA PROLENE 1 C/12', dept:'Quirófano'},
+    {name:'Sutura Prolene 1 A/A 36Mm Azul C/12', dept:'Quirófano'},
+    {name:'TEGADERM FILM C/50', dept:'Enfermería'},
+    {name:'TORUNDA DE ALGODÓN 500GR', dept:'Enfermería'},
+    {name:'TRAMADOL 2ML SOL. INY 100MG C/5', dept:'Farmacia'},
+    {name:'TRANSPORE 1" 2.5CM C/12', dept:'Enfermería'},
+    {name:'TUBO ENDOTRAQUEAL 28FR C/G 7MM', dept:'Anestesiología'},
+    {name:'TUBO ENDOTRAQUEAL 32FR C/G 8.0MM', dept:'Anestesiología'},
+    {name:'Tubo endotraqueal 26Fr c/g 6.5mm', dept:'Anestesiología'},
+    {name:'Tubo p/aspirador est 3.1mts', dept:'Quirófano'},
+    {name:'TUBO PENROUSE 1/4', dept:'Quirófano'},
+    {name:'VENDA ELÁSTICA 10CM CURATEX', dept:'Enfermería'},
+    {name:'VENDA ELÁSTICA 30CM CURATEX', dept:'Enfermería'},
+    {name:'BATA SPA BLANCO/AZUL C/10', dept:'Hospitalización'},
+    {name:'TANGA PARA DAMA BLANCO/AZUL C/10 PZS', dept:'Hospitalización'},
+    {name:'TOP ABIERTO/CERRADO AZUL C/10 PZS', dept:'Hospitalización'},
+    {name:'BOLSA NEGRA 90×1.20', dept:'General'},
+    {name:'MANGUERA DE ASPIRACION NO COLAPSABLE', dept:'Quirófano'},
+  ];
+
+  return arts.map(a => ({
+    id: uid(),
+    name: a.name,
+    dept: a.dept,
+    unidad: 'Pzas',
+    stock: 0,
+    min: 0,
+    reorden: 0,
+    max: 0,
+    notas: ''
+  }));
+}
+
+// ─── POPULATE SELECTS ─────────────────────────────────────────────
+function populateSelects() {
+  const selects = ['oDept','aDept','filtroDeptOrden','filtroDeptInv','filtroPSemana'];
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const hasBlank = el.querySelector('option[value=""]');
+    const blankLabel = hasBlank ? hasBlank.textContent : '';
+    el.innerHTML = (hasBlank ? `<option value="">${blankLabel}</option>` : '');
+    DEPARTAMENTOS.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d;
+      el.appendChild(o);
+    });
+  });
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'ordenes') renderOrdenes();
+  if (name === 'semana') renderSemana();
+  if (name === 'inventario') renderInventario();
+  if (name === 'alertas') renderAlertas();
+}
+
+function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── STATS ────────────────────────────────────────────────────────
+function updateStats() {
+  const p = ordenes.filter(o => o.status === 'pendiente').length;
+  const pr = ordenes.filter(o => o.status === 'proceso').length;
+  const r = ordenes.filter(o => o.status === 'recibido' && o.fechaRecibido === today()).length;
+  const bmin = inventario.filter(a => a.stock > 0 && a.min > 0 && a.stock < a.min).length;
+  document.getElementById('statPendiente').textContent = p;
+  document.getElementById('statProceso').textContent = pr;
+  document.getElementById('statRecibido').textContent = r;
+  document.getElementById('statBajoMinimo').textContent = bmin;
+  document.getElementById('statTotalArt').textContent = inventario.length;
+}
+
+// ─── ORDENES RENDER ───────────────────────────────────────────────
+function getStatusLabel(s) {
+  const m = {pendiente:'Pendiente', proceso:'En Proceso', recibido:'Recibido'};
+  return m[s] || s;
+}
+function getStatusBadge(s) {
+  const m = {pendiente:'badge-red', proceso:'badge-yellow', recibido:'badge-green'};
+  return m[s] || 'badge-navy';
+}
+
+function renderOrdenes() {
+  const txt = document.getElementById('filtroOrden').value.toLowerCase();
+  const dept = document.getElementById('filtroDeptOrden').value;
+
+  let filtered = ordenes.filter(o => {
+    if (txt && !o.desc.toLowerCase().includes(txt) && !o.num.toLowerCase().includes(txt)) return false;
+    if (dept && o.dept !== dept) return false;
+    return true;
+  });
+
+  ['pendiente','proceso','recibido'].forEach(st => {
+    const col = document.getElementById('col-' + st);
+    const cnt = document.getElementById('cnt-' + st);
+    const items = filtered.filter(o => o.status === st);
+    cnt.textContent = items.length;
+
+    if (!items.length) {
+      col.innerHTML = '<div class="empty-state" style="padding:24px 10px"><div class="icon" style="font-size:28px">📭</div><p style="font-size:12px">Sin órdenes</p></div>';
+      return;
+    }
+
+    col.innerHTML = items.map(o => {
+      const artCount = (o.items || []).length;
+      return `
+        <div class="orden-card status-${o.status}"
+          draggable="true"
+          data-id="${o.id}"
+          ondragstart="onDragStart(event,'${o.id}')"
+          ondragend="onDragEnd(event)">
+          <div class="orden-card-top">
+            <span class="orden-card-num">${o.num}</span>
+            <span class="orden-card-fecha">${fmtFecha(o.fecha)}</span>
+          </div>
+          <div class="orden-card-title">${o.desc}</div>
+          ${o.dept ? `<div class="orden-card-dept">📁 ${o.dept}</div>` : ''}
+          <div class="orden-card-items">${artCount} artículo${artCount !== 1 ? 's' : ''}</div>
+          ${o.fechaEst ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📅 Entrega: ${fmtFecha(o.fechaEst)}</div>` : ''}
+          <div class="orden-card-actions">
+            <button class="btn btn-ghost btn-xs" onclick="verDetalle('${o.id}')">👁 Ver</button>
+            <button class="btn btn-ghost btn-xs" onclick="editarOrden('${o.id}')">✏️ Editar</button>
+            <button class="btn btn-xs" style="background:var(--red-light);color:var(--red);border:none" onclick="eliminarOrden('${o.id}')">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  });
+}
+
+// ─── DRAG & DROP ─────────────────────────────────────────────────
+function onDragStart(e, id) {
+  dragOrdenId = id;
+  setTimeout(() => { e.target.classList.add('dragging'); }, 0);
+}
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('drag-active'));
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-active');
+}
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-active');
+}
+function onDrop(e, status) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-active');
+  if (!dragOrdenId) return;
+  const ord = ordenes.find(o => o.id === dragOrdenId);
+  if (ord) {
+    const prev = ord.status;
+    ord.status = status;
+    if (status === 'recibido' && prev !== 'recibido') {
+      ord.fechaRecibido = today();
+      aplicarOrdenAlInventario(ord);
+      if (confirm(`¿Marcar orden "${ord.desc}" como recibida y actualizar inventario en almacén?`)) {
+        save();
+        renderOrdenes();
+        renderInventario();
+        updateStats();
+      } else {
+        ord.status = prev;
+        ord.fechaRecibido = null;
+        renderOrdenes();
+      }
+    } else {
+      save();
+      renderOrdenes();
+      updateStats();
+    }
+  }
+  dragOrdenId = null;
+}
+
+function aplicarOrdenAlInventario(ord) {
+  (ord.items || []).forEach(item => {
+    const art = inventario.find(a => a.id === item.artId);
+    if (art) {
+      art.stock = (art.stock || 0) + (item.cantidad || 0);
+    }
+  });
+  save();
+}
+
+// ─── MODAL ORDEN ─────────────────────────────────────────────────
+function abrirModalOrden(prefill = null) {
+  editOrdenIdx = null;
+  ordenItems = prefill ? [...prefill] : [];
+  ordenStatus = 'pendiente';
+  document.getElementById('modalOrdenTitle').textContent = 'Nueva Orden de Compra';
+  document.getElementById('oDesc').value = '';
+  document.getElementById('oDept').value = '';
+  document.getElementById('oFecha').value = today();
+  document.getElementById('oFechaEst').value = '';
+  document.getElementById('oNotas').value = '';
+  setOrdenStatus('pendiente');
+  renderOrdenItems();
+  document.getElementById('modalOrden').classList.add('open');
+}
+
+function editarOrden(id) {
+  const ord = ordenes.find(o => o.id === id);
+  if (!ord) return;
+  editOrdenIdx = id;
+  ordenItems = [...(ord.items || [])];
+  ordenStatus = ord.status;
+  document.getElementById('modalOrdenTitle').textContent = 'Editar Orden de Compra';
+  document.getElementById('oDesc').value = ord.desc;
+  document.getElementById('oDept').value = ord.dept || '';
+  document.getElementById('oFecha').value = ord.fecha || '';
+  document.getElementById('oFechaEst').value = ord.fechaEst || '';
+  document.getElementById('oNotas').value = ord.notas || '';
+  setOrdenStatus(ord.status);
+  renderOrdenItems();
+  document.getElementById('modalOrden').classList.add('open');
+}
+
+function setOrdenStatus(st) {
+  ordenStatus = st;
+  ['pendiente','proceso','recibido'].forEach(s => {
+    const btn = document.getElementById('statusBtn' + s.charAt(0).toUpperCase() + s.slice(1));
+    if (!btn) return;
+    if (s === st) {
+      btn.style.opacity = '1';
+      btn.style.transform = 'scale(1.04)';
+      btn.style.fontWeight = '900';
+    } else {
+      btn.style.opacity = '0.5';
+      btn.style.transform = 'scale(1)';
+      btn.style.fontWeight = '700';
+    }
+  });
+}
+
+function agregarItemOrden() {
+  ordenItems.push({ artId: '', nombre: '', cantidad: 1, unidad: '' });
+  renderOrdenItems();
+}
+
+function renderOrdenItems() {
+  const cont = document.getElementById('ordenItemsList');
+  if (!ordenItems.length) {
+    cont.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:4px 0">Sin artículos en esta orden</p>';
+    return;
+  }
+  cont.innerHTML = ordenItems.map((item, i) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <select onchange="seleccionarArtOrden(${i},this.value)" style="flex:2;min-width:160px">
+        <option value="">Seleccionar artículo…</option>
+        ${inventario.map(a => `<option value="${a.id}" ${a.id===item.artId?'selected':''}>${a.name} (${a.dept})</option>`).join('')}
+      </select>
+      <input type="number" min="1" value="${item.cantidad}" oninput="ordenItems[${i}].cantidad=parseInt(this.value)||1"
+        style="width:80px" placeholder="Cant.">
+      <input type="text" value="${item.unidad}" oninput="ordenItems[${i}].unidad=this.value"
+        placeholder="Unidad" style="width:80px">
+      <button class="btn btn-xs" style="background:var(--red-light);color:var(--red);border:none"
+        onclick="ordenItems.splice(${i},1);renderOrdenItems()">×</button>
+    </div>`).join('');
+}
+
+function seleccionarArtOrden(i, artId) {
+  const art = inventario.find(a => a.id === artId);
+  ordenItems[i].artId = artId;
+  ordenItems[i].nombre = art ? art.name : '';
+  ordenItems[i].unidad = art ? art.unidad : '';
+  renderOrdenItems();
+}
+
+function guardarOrden() {
+  const desc = document.getElementById('oDesc').value.trim();
+  if (!desc) { alert('La descripción es requerida.'); return; }
+
+  const ord = {
+    id: editOrdenIdx || uid(),
+    num: editOrdenIdx ? (ordenes.find(o => o.id === editOrdenIdx) || {}).num || generarNumOrden() : generarNumOrden(),
+    desc,
+    dept: document.getElementById('oDept').value,
+    fecha: document.getElementById('oFecha').value,
+    fechaEst: document.getElementById('oFechaEst').value,
+    notas: document.getElementById('oNotas').value.trim(),
+    status: ordenStatus,
+    items: [...ordenItems],
+    fechaRecibido: ordenStatus === 'recibido' ? (ordenes.find(o=>o.id===editOrdenIdx)?.fechaRecibido || today()) : null,
+  };
+
+  if (editOrdenIdx) {
+    const idx = ordenes.findIndex(o => o.id === editOrdenIdx);
+    if (idx >= 0) ordenes[idx] = ord;
+  } else {
+    ordenes.push(ord);
+  }
+
+  save();
+  cerrarModal('modalOrden');
+  renderOrdenes();
+  updateStats();
+}
+
+function eliminarOrden(id) {
+  if (!confirm('¿Eliminar esta orden?')) return;
+  ordenes = ordenes.filter(o => o.id !== id);
+  save();
+  renderOrdenes();
+  updateStats();
+}
+
+function generarNumOrden() {
+  const d = new Date();
+  const n = ordenes.length + 1;
+  return `OC-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(n).padStart(3,'0')}`;
+}
+
+// ─── DETALLE ORDEN ────────────────────────────────────────────────
+function verDetalle(id) {
+  const ord = ordenes.find(o => o.id === id);
+  if (!ord) return;
+  detalleOrdenId = id;
+  document.getElementById('detalleTitle').textContent = `${ord.num} — ${ord.desc}`;
+
+  const statusColors = {pendiente:'var(--red)',proceso:'var(--yellow)',recibido:'var(--green)'};
+  const statusLabel = {pendiente:'🔴 Pendiente',proceso:'🟡 En Proceso',recibido:'🟢 Recibido en Almacén'};
+
+  const body = document.getElementById('detalleBody');
+  body.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:10px;color:var(--text2);font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Estado</div>
+        <div style="font-weight:800;color:${statusColors[ord.status]};font-size:15px">${statusLabel[ord.status]}</div>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:10px;color:var(--text2);font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Departamento</div>
+        <div style="font-weight:700">${ord.dept || '—'}</div>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:10px;color:var(--text2);font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Fecha de Orden</div>
+        <div style="font-weight:700">${fmtFecha(ord.fecha)}</div>
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:10px;color:var(--text2);font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Entrega Estimada</div>
+        <div style="font-weight:700">${fmtFecha(ord.fechaEst)}</div>
+      </div>
+    </div>
+    ${ord.notas ? `<div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text2);margin-bottom:14px">📝 ${ord.notas}</div>` : ''}
+    <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Artículos (${(ord.items||[]).length})</div>
+    <table class="items-table" style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th>Artículo</th><th>Cantidad</th><th>Unidad</th><th>Stock actual</th>
+      </tr></thead>
+      <tbody>
+        ${(ord.items||[]).map(item => {
+          const art = inventario.find(a => a.id === item.artId);
+          return `<tr>
+            <td>${item.nombre || (art ? art.name : '—')}</td>
+            <td style="text-align:center;font-weight:700">${item.cantidad}</td>
+            <td style="text-align:center">${item.unidad}</td>
+            <td style="text-align:center">${art ? art.stock : '—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${ord.status === 'recibido' ? `<div style="margin-top:14px;padding:10px 14px;background:var(--green-light);border-radius:8px;color:var(--green);font-weight:700;font-size:13px">✅ Recibido el ${fmtFecha(ord.fechaRecibido)} — Inventario actualizado</div>` : ''}
+  `;
+
+  const btn = document.getElementById('detalleMarcarBtn');
+  btn.style.display = ord.status !== 'recibido' ? 'inline-flex' : 'none';
+  document.getElementById('modalDetalle').classList.add('open');
+}
+
+function marcarRecibidoDesdeDetalle() {
+  const ord = ordenes.find(o => o.id === detalleOrdenId);
+  if (!ord) return;
+  if (!confirm(`¿Marcar la orden "${ord.desc}" como Recibida en Almacén y actualizar inventario?`)) return;
+  ord.status = 'recibido';
+  ord.fechaRecibido = today();
+  aplicarOrdenAlInventario(ord);
+  save();
+  renderOrdenes();
+  renderInventario();
+  updateStats();
+  verDetalle(detalleOrdenId);
+}
+
+// ─── COMPRA SEMANAL ───────────────────────────────────────────────
+function renderSemana() {
+  const sw = document.getElementById('semanaFecha').value;
+  if (!sw) {
+    const now = new Date();
+    const y = now.getFullYear();
+    const w = getWeekNum(now);
+    document.getElementById('semanaFecha').value = `${y}-W${String(w).padStart(2,'0')}`;
+  }
+  renderSemanaArt();
+}
+
+function getWeekNum(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+}
+
+function renderSemanaArt() {
+  const txt = document.getElementById('filtroSemanaArt').value.toLowerCase();
+  const dept = document.getElementById('filtroPSemana').value;
+  const grid = document.getElementById('semanaGrid');
+
+  let arts = inventario.filter(a => {
+    if (txt && !a.name.toLowerCase().includes(txt)) return false;
+    if (dept && a.dept !== dept) return false;
+    return true;
+  });
+
+  // Highlight critical items first
+  arts.sort((a,b) => {
+    const as = getStockStatus(a), bs = getStockStatus(b);
+    const order = {critical:0, warn:1, ok:2};
+    return (order[as]||2) - (order[bs]||2);
+  });
+
+  document.getElementById('semanaCount').textContent = `${semanaSel.size} artículos seleccionados`;
+
+  if (!arts.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>No se encontraron artículos</p></div>';
+    return;
+  }
+
+  grid.innerHTML = arts.map(a => {
+    const sel = semanaSel.has(a.id);
+    const st = getStockStatus(a);
+    const stLabel = st === 'critical' ? '🔴' : st === 'warn' ? '🟡' : '';
+    return `
+      <div class="semana-art ${sel ? 'seleccionado' : ''}" onclick="toggleSemana('${a.id}')">
+        <div class="semana-art-check">${sel ? '✓' : ''}</div>
+        <div style="flex:1">
+          <div class="semana-art-name">${stLabel} ${a.name}</div>
+          <div class="semana-art-dept">${a.dept}</div>
+          ${a.stock !== undefined && a.stock >= 0 ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Stock: ${a.stock} ${a.unidad}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleSemana(id) {
+  if (semanaSel.has(id)) semanaSel.delete(id);
+  else semanaSel.add(id);
+  renderSemanaArt();
+}
+
+function selectAllSemana() {
+  const dept = document.getElementById('filtroPSemana').value;
+  const txt = document.getElementById('filtroSemanaArt').value.toLowerCase();
+  inventario.filter(a => {
+    if (txt && !a.name.toLowerCase().includes(txt)) return false;
+    if (dept && a.dept !== dept) return false;
+    return true;
+  }).forEach(a => semanaSel.add(a.id));
+  renderSemanaArt();
+}
+
+function clearSemana() {
+  semanaSel.clear();
+  renderSemanaArt();
+}
+
+function generarOrdenSemana() {
+  if (!semanaSel.size) { alert('Selecciona al menos un artículo.'); return; }
+  const items = [...semanaSel].map(id => {
+    const art = inventario.find(a => a.id === id);
+    return { artId: id, nombre: art ? art.name : '', cantidad: 1, unidad: art ? art.unidad : '' };
+  });
+  abrirModalOrden(items);
+  document.getElementById('oDesc').value = `Compra Semanal — ${new Date().toLocaleDateString('es-MX', {day:'2-digit',month:'short',year:'numeric'})}`;
+  semanaSel.clear();
+}
+
+// ─── INVENTARIO ────────────────────────────────────────────────────
+function getStockStatus(a) {
+  if (!a.min && !a.reorden && !a.max) return 'ok';
+  if (a.min > 0 && a.stock < a.min) return 'critical';
+  if (a.reorden > 0 && a.stock <= a.reorden) return 'warn';
+  return 'ok';
+}
+
+function getStockPct(a) {
+  if (!a.max || a.max === 0) return 50;
+  return Math.min(100, Math.round((a.stock / a.max) * 100));
+}
+
+function renderInventario() {
+  const txt = document.getElementById('filtroInv').value.toLowerCase();
+  const dept = document.getElementById('filtroDeptInv').value;
+  const est = document.getElementById('filtroEstadoInv').value;
+  const tbody = document.getElementById('invBody');
+
+  let arts = inventario.filter(a => {
+    if (txt && !a.name.toLowerCase().includes(txt)) return false;
+    if (dept && a.dept !== dept) return false;
+    if (est && getStockStatus(a) !== est) return false;
+    return true;
+  });
+
+  if (!arts.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📦</div><p>No se encontraron artículos</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = arts.map(a => {
+    const st = getStockStatus(a);
+    const pct = getStockPct(a);
+    const barColor = st === 'critical' ? 'var(--red)' : st === 'warn' ? 'var(--yellow)' : 'var(--green)';
+    const stBadge = st === 'critical' ? '<span class="reorder-badge reorder-critical">⚠ Bajo mínimo</span>'
+      : st === 'warn' ? '<span class="reorder-badge reorder-warn">↓ Reorden</span>'
+      : '<span class="reorder-badge reorder-ok">✓ OK</span>';
+
+    return `<tr>
+      <td style="max-width:220px;font-weight:600;font-size:13px">${a.name}</td>
+      <td><span class="dept-tag">${a.dept}</span></td>
+      <td style="text-align:center">
+        <input class="qty-input" type="number" min="0" value="${a.stock}" oninput="updateStock('${a.id}',this.value)">
+      </td>
+      <td style="text-align:center;color:var(--text2);font-size:13px">${a.min || '—'}</td>
+      <td style="text-align:center;color:var(--yellow);font-weight:700;font-size:13px">${a.reorden || '—'}</td>
+      <td style="text-align:center;color:var(--text2);font-size:13px">${a.max || '—'}</td>
+      <td style="min-width:80px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:2px">${pct}%</div>
+        <div class="reorder-bar">
+          <div class="reorder-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+      </td>
+      <td>${stBadge}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn btn-ghost btn-xs" onclick="editarArticulo('${a.id}')">✏️</button>
+        <button class="btn btn-xs" style="background:var(--red-light);color:var(--red);border:none;margin-left:4px" onclick="eliminarArticulo('${a.id}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStock(id, val) {
+  const art = inventario.find(a => a.id === id);
+  if (art) {
+    art.stock = parseInt(val) || 0;
+    save();
+    updateStats();
+  }
+}
+
+// ─── MODAL ARTÍCULO ───────────────────────────────────────────────
+function abrirModalArt() {
+  editArtIdx = null;
+  document.getElementById('modalArtTitle').textContent = 'Nuevo Artículo';
+  ['aName','aUnidad','aStock','aMin','aReorden','aMax','aNotas'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('aDept').value = '';
+  document.getElementById('modalArt').classList.add('open');
+}
+
+function editarArticulo(id) {
+  const art = inventario.find(a => a.id === id);
+  if (!art) return;
+  editArtIdx = id;
+  document.getElementById('modalArtTitle').textContent = 'Editar Artículo';
+  document.getElementById('aName').value = art.name;
+  document.getElementById('aDept').value = art.dept;
+  document.getElementById('aUnidad').value = art.unidad;
+  document.getElementById('aStock').value = art.stock;
+  document.getElementById('aMin').value = art.min;
+  document.getElementById('aReorden').value = art.reorden;
+  document.getElementById('aMax').value = art.max;
+  document.getElementById('aNotas').value = art.notas || '';
+  document.getElementById('modalArt').classList.add('open');
+}
+
+function guardarArticulo() {
+  const name = document.getElementById('aName').value.trim();
+  if (!name) { alert('El nombre del artículo es requerido.'); return; }
+
+  const art = {
+    id: editArtIdx || uid(),
+    name,
+    dept: document.getElementById('aDept').value || 'General',
+    unidad: document.getElementById('aUnidad').value || 'Pzas',
+    stock: parseInt(document.getElementById('aStock').value) || 0,
+    min: parseInt(document.getElementById('aMin').value) || 0,
+    reorden: parseInt(document.getElementById('aReorden').value) || 0,
+    max: parseInt(document.getElementById('aMax').value) || 0,
+    notas: document.getElementById('aNotas').value.trim(),
+  };
+
+  if (editArtIdx) {
+    const idx = inventario.findIndex(a => a.id === editArtIdx);
+    if (idx >= 0) inventario[idx] = art;
+  } else {
+    inventario.push(art);
+  }
+
+  save();
+  cerrarModal('modalArt');
+  renderInventario();
+  updateStats();
+}
+
+function eliminarArticulo(id) {
+  if (!confirm('¿Eliminar este artículo del inventario?')) return;
+  inventario = inventario.filter(a => a.id !== id);
+  save();
+  renderInventario();
+  updateStats();
+}
+
+// ─── ALERTAS ──────────────────────────────────────────────────────
+function renderAlertas() {
+  const tbody = document.getElementById('alertasBody');
+  const wrap = document.getElementById('alertasBannerWrap');
+
+  let arts = inventario.filter(a => {
+    const st = getStockStatus(a);
+    if (filtroAlerta === 'critical') return st === 'critical';
+    if (filtroAlerta === 'warn') return st === 'warn';
+    return st !== 'ok';
+  });
+
+  const criticals = inventario.filter(a => getStockStatus(a) === 'critical').length;
+  const warns = inventario.filter(a => getStockStatus(a) === 'warn').length;
+
+  wrap.innerHTML = '';
+  if (criticals > 0) {
+    wrap.innerHTML += `<div class="alert-banner" style="background:linear-gradient(135deg,#fde8e9,#fff0f1);border-color:var(--red)">
+      🚨 <strong>${criticals} artículo${criticals>1?'s':''} bajo el stock mínimo</strong> — Se requiere compra urgente.
+    </div>`;
+  }
+  if (warns > 0) {
+    wrap.innerHTML += `<div class="alert-banner">
+      ⚠️ <strong>${warns} artículo${warns>1?'s':''} en punto de reorden</strong> — Planifica la compra pronto.
+    </div>`;
+  }
+  if (!criticals && !warns) {
+    wrap.innerHTML = `<div class="alert-banner" style="background:linear-gradient(135deg,#edf7f2,#f0fff8);border-color:var(--green);color:#1f6644">
+      ✅ <strong>Todo el inventario está en niveles adecuados.</strong>
+    </div>`;
+  }
+
+  if (!arts.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">✅</div><p>Sin artículos en esta categoría</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = arts.map(a => {
+    const st = getStockStatus(a);
+    const stBadge = st === 'critical'
+      ? '<span class="reorder-badge reorder-critical">🔴 Bajo mínimo</span>'
+      : '<span class="reorder-badge reorder-warn">🟡 Punto de reorden</span>';
+
+    return `<tr>
+      <td style="font-weight:600;font-size:13px">${a.name}</td>
+      <td><span class="dept-tag">${a.dept}</span></td>
+      <td style="text-align:center;font-weight:800;color:${st==='critical'?'var(--red)':'var(--yellow)'}">${a.stock}</td>
+      <td style="text-align:center">${a.min || '—'}</td>
+      <td style="text-align:center">${a.reorden || '—'}</td>
+      <td style="text-align:center">${a.max || '—'}</td>
+      <td>${stBadge}</td>
+      <td style="text-align:center">
+        <button class="btn btn-navy btn-xs" onclick="generarOrdenDesdeArt('${a.id}')">📋 Ordenar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function generarOrdenDesdeAlertas() {
+  const criticos = inventario.filter(a => getStockStatus(a) === 'critical');
+  if (!criticos.length) { alert('No hay artículos bajo mínimo.'); return; }
+  const items = criticos.map(a => ({
+    artId: a.id, nombre: a.name, cantidad: Math.max(1, (a.max || 0) - (a.stock || 0)), unidad: a.unidad
+  }));
+  abrirModalOrden(items);
+  document.getElementById('oDesc').value = `Orden Urgente — Artículos bajo mínimo ${new Date().toLocaleDateString('es-MX')}`;
+}
+
+function generarOrdenDesdeArt(id) {
+  const art = inventario.find(a => a.id === id);
+  if (!art) return;
+  const items = [{ artId: art.id, nombre: art.name, cantidad: Math.max(1, (art.max || 0) - (art.stock || 0)), unidad: art.unidad }];
+  abrirModalOrden(items);
+  document.getElementById('oDesc').value = `Reposición: ${art.name}`;
+  document.getElementById('oDept').value = art.dept;
+}
+
+function exportarInventario() {
+  const rows = [['Artículo','Departamento','Stock','Mínimo','Reorden','Máximo','Unidad','Estado']];
+  inventario.forEach(a => {
+    rows.push([a.name, a.dept, a.stock, a.min, a.reorden, a.max, a.unidad, getStockStatus(a)]);
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `inventario-mareva-${today()}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────
+async function init() {
+  await loadData();
+  populateSelects();
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  renderOrdenes();
+  updateStats();
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if(e.target === ov) ov.classList.remove('open'); });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
